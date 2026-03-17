@@ -50,7 +50,7 @@ export default function BloombergDashboard({ availableProviders }: Props) {
   };
 
   return (
-    <div style={{ fontFamily: "'IBM Plex Mono','Courier New',monospace", background: t.bg, color: t.text, minHeight: "100vh", display: "flex", flexDirection: "column", transition: "background 0.25s, color 0.25s" }}>
+    <div style={{ fontFamily: "'IBM Plex Mono','Courier New',monospace", background: t.bg, color: t.text, height: "100vh", overflow: "hidden", display: "flex", flexDirection: "column", transition: "background 0.25s, color 0.25s" }}>
 
       {/* HEADER */}
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "8px 16px", background: t.bgHeader, borderBottom: `1px solid ${t.border}`, transition: "background 0.25s" }}>
@@ -96,7 +96,7 @@ export default function BloombergDashboard({ availableProviders }: Props) {
       </div>
 
       {/* BODY */}
-      <div style={{ flex: 1, display: "grid", gridTemplateColumns: "280px 1fr", overflow: "hidden", maxHeight: "calc(100vh - 118px)" }}>
+      <div style={{ flex: 1, display: "grid", gridTemplateColumns: "280px 1fr", overflow: "hidden", minHeight: 0 }}>
 
         {/* SIDEBAR */}
         <div style={{ borderRight: `1px solid ${t.border}`, overflow: "hidden", background: t.bgSidebar, display: "flex", flexDirection: "column", transition: "background 0.25s" }}>
