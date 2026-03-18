@@ -105,6 +105,65 @@ npm run dev
 
 Open http://localhost:3000
 
+## MCP Server
+
+The `mcp/` directory contains a Model Context Protocol server that gives Claude
+direct read/write access to the trading database.
+
+### Tools exposed
+
+| Tool | Description |
+|---|---|
+| `get_signals` | Query signals (instrument, status, min_score, days, limit) |
+| `get_signal_events` | Event timeline for a signal UUID |
+| `update_signal_status` | Mark signal ACTIVE / CLOSED / REJECTED |
+| `run_signal_scan` | Trigger live scan via Next.js API (needs NEXT_APP_URL) |
+| `get_ghost_trades` | Ghost trades + outcomes (instrument, outcome, days) |
+| `get_ghost_summary` | Aggregate stats: fill rate, win rate, avg R, expectancy |
+| `get_ghost_leaderboard` | Rankings by strategies / symbols / checklist |
+| `create_ghost_trade` | Insert a new ghost trade |
+| `record_ghost_outcome` | WIN / LOSS / etc. + R-multiples for a ghost trade |
+| `get_journal` | Journal entries (days, limit) |
+| `create_journal_entry` | Add note + emotion + tags + confidence |
+| `get_agent_tasks` | Agent task list (role, status, limit) |
+| `dispatch_agent_task` | Queue a new agent task |
+| `update_agent_task` | Update task status / output |
+| `get_analytics` | Signal analytics + breakdowns by any dimension |
+| `get_recent_activity` | Cross-table activity feed (last N hours) |
+
+### Resources exposed
+
+| URI | Content |
+|---|---|
+| `project://context` | This CLAUDE.md file |
+| `project://trading-types` | `lib/trading-types.ts` — all DB interfaces |
+
+### Setup
+
+```bash
+cd mcp
+npm install
+```
+
+Add to `~/.claude/settings.json` (Claude Code) or `claude_desktop_config.json` (Desktop):
+
+```json
+{
+  "mcpServers": {
+    "space-terminal": {
+      "command": "npx",
+      "args": ["tsx", "/absolute/path/to/Space-terminal/mcp/server.ts"],
+      "env": {
+        "POSTGRES_URL": "postgresql://...",
+        "NEXT_APP_URL": "http://localhost:3000"
+      }
+    }
+  }
+}
+```
+
+`NEXT_APP_URL` is optional — only needed for `run_signal_scan`.
+
 ## Current state
 
 - [x] Stack evaluation delivered
