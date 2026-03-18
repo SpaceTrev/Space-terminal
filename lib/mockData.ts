@@ -6,6 +6,10 @@ export const FX_DATA: Record<string, Quote> = {
   "USD/JPY": { symbol: "USD/JPY", bid: "149.80", ask: "149.82", spread: "2.0",  change: "+0.34",   changePct: "+0.23%", up: true,  O: "149.48", H: "150.12", L: "149.21", C: "149.82", volume: "112.8K", sparkline: [18,19,21,20,22,23,22,24,25,26], baseSeed: 14982, type: "fx" },
   "XAU/USD": { symbol: "XAU/USD", bid: "2933.80",ask: "2934.50",spread: "70.0", change: "+12.40",  changePct: "+0.43%", up: true,  O: "2921.10",H: "2941.30",L: "2918.40",C: "2934.50",volume: "38.1K",  sparkline: [15,17,16,19,20,22,21,24,23,25], baseSeed: 29345, type: "fx" },
   "BTC/USD": { symbol: "BTC/USD", bid: "84,150", ask: "84,210", spread: "60.0", change: "-1,240",  changePct: "-1.45%", up: false, O: "85,610", H: "86,220", L: "83,940", C: "84,210", volume: "24.7K",  sparkline: [32,30,28,31,29,26,27,24,22,20], baseSeed: 84210, type: "fx" },
+  "ETH/USD": { symbol: "ETH/USD", bid: "3,241", ask: "3,243",  spread: "2.0",  change: "+38.50",  changePct: "+1.20%", up: true,  O: "3,204",  H: "3,278",  L: "3,195",  C: "3,243",  volume: "18.3K",  sparkline: [18,20,22,21,23,25,24,26,27,28], baseSeed: 32430, type: "fx" },
+  "SOL/USD": { symbol: "SOL/USD", bid: "142.40", ask: "142.60", spread: "0.20", change: "-3.80",  changePct: "-2.60%", up: false, O: "146.20", H: "147.50", L: "141.80", C: "142.60", volume: "9.2K",   sparkline: [28,26,25,27,24,22,23,21,20,19], baseSeed: 14260, type: "fx" },
+  "GBP/JPY": { symbol: "GBP/JPY", bid: "189.20", ask: "189.25", spread: "5.0",  change: "+0.85",  changePct: "+0.45%", up: true,  O: "188.40", H: "189.80", L: "188.10", C: "189.25", volume: "41.8K",  sparkline: [20,21,23,22,24,25,24,26,25,27], baseSeed: 18925, type: "fx" },
+  "USD/CAD": { symbol: "USD/CAD", bid: "1.3842", ask: "1.3845", spread: "3.0",  change: "+0.0031", changePct: "+0.22%", up: true, O: "1.3811", H: "1.3862", L: "1.3798", C: "1.3845", volume: "38.6K",  sparkline: [17,18,20,19,21,22,21,23,22,24], baseSeed: 13845, type: "fx" },
 };
 
 export const FUTURES_DATA: Record<string, Quote> = {
@@ -32,6 +36,8 @@ export const TICKER_DATA = [
   { symbol: "USD/JPY", price: "149.82",   pct: "+0.23%", up: true  },
   { symbol: "XAU/USD", price: "2934.50",  pct: "+0.43%", up: true  },
   { symbol: "BTC/USD", price: "84,210",   pct: "-1.45%", up: false },
+  { symbol: "ETH/USD", price: "3,243",    pct: "+1.20%", up: true  },
+  { symbol: "SOL/USD", price: "142.60",   pct: "-2.60%", up: false },
   { symbol: "ZN1!",    price: "109.219",  pct: "-0.26%", up: false },
   { symbol: "6E1!",    price: "1.0844",   pct: "+0.19%", up: true  },
 ];

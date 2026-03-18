@@ -1,23 +1,44 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { THEMES } from "@/lib/themes";
 import type { ThemeKey } from "@/lib/themes";
-import { FX_DATA, FUTURES_DATA, MOCK_NEWS } from "@/lib/mockData";
+import { FX_DATA, FUTURES_DATA } from "@/lib/mockData";
 import { TickerBar } from "./TickerBar";
 import { WatchlistSection } from "./WatchlistSection";
 import { FuturesStrip } from "./FuturesStrip";
-import { CandleChart } from "./CandleChart";
+import { LightweightChart } from "./LightweightChart";
 import { AITerminal } from "./AITerminal";
+import { IntelPanel } from "./IntelPanel";
 import { useQuotes } from "@/hooks/useQuotes";
 import { useBars } from "@/hooks/useBars";
+import { useNews } from "@/hooks/useNews";
+import { useSessionIntel } from "@/hooks/useSessionIntel";
 import type { Provider } from "@/lib/types";
 
 const PANELS = [
-  { id: "ai",   label: "AI TERMINAL", icon: "⬡" },
-  { id: "news", label: "NEWS",        icon: "◉" },
+  { id: "ai",    label: "AI TERMINAL", icon: "⬡" },
+  { id: "intel", label: "INTEL",       icon: "◈" },
+  { id: "news",  label: "NEWS",        icon: "◉" },
 ];
 const TIMEFRAMES = ["1M", "5M", "15M", "1H", "4H", "D"];
+
+// Session windows in UTC hours (start inclusive, end exclusive)
+// CME: open 22:00 Sun → 21:00 Fri, closed 21:00–22:00 daily
+const SESSIONS = [
+  { name: "CME FUTURES",  start: 22, end: 21 },
+  { name: "LONDON FX",    start:  7, end: 16 },
+  { name: "NEW YORK FX",  start: 13, end: 22 },
+  { name: "TOKYO",        start:  0, end:  9 },
+] as const;
+
+function isSessionOpen(start: number, end: number, utcHour: number): boolean {
+  if (start > end) {
+    // Wrap-around (e.g. CME 22–21 means open except 21–22)
+    return utcHour >= start || utcHour < end;
+  }
+  return utcHour >= start && utcHour < end;
+}
 
 interface Props {
   availableProviders: Provider[];
@@ -31,12 +52,23 @@ export default function BloombergDashboard({ availableProviders }: Props) {
   const [activeTF, setActiveTF]         = useState("4H");
   const [time, setTime]                 = useState(new Date());
 
-  const t      = THEMES[themeKey];
-  const quotes = useQuotes();
-  const bars   = useBars(activeSymbol, activeTF);
+  const t           = THEMES[themeKey];
+  const { quotes, isLive } = useQuotes();
+  const bars        = useBars(activeSymbol, activeTF);
+  const news        = useNews();
+  const sessionIntel = useSessionIntel(activeSymbol, bars);
 
   const sym      = quotes[activeSymbol] ?? FX_DATA["EUR/USD"];
   const isFutures = sym?.type === "futures";
+
+  const fxWatchlistData = useMemo(
+    () => Object.fromEntries(Object.keys(FX_DATA).map(k => [k, quotes[k] ?? FX_DATA[k]])),
+    [quotes]
+  );
+  const futuresWatchlistData = useMemo(
+    () => Object.fromEntries(Object.keys(FUTURES_DATA).map(k => [k, quotes[k] ?? FUTURES_DATA[k]])),
+    [quotes]
+  );
 
   useEffect(() => {
     const id = setInterval(() => setTime(new Date()), 1000);
@@ -44,6 +76,7 @@ export default function BloombergDashboard({ availableProviders }: Props) {
   }, []);
 
   const formatTime = (d: Date) => d.toUTCString().slice(17, 25) + " UTC";
+  const utcHour = time.getUTCHours();
 
   const handleSymbolClick = (symbol: string) => {
     setActiveSymbol(symbol);
@@ -64,7 +97,19 @@ export default function BloombergDashboard({ availableProviders }: Props) {
           <span style={{ color: t.textMuted, fontSize: 13, letterSpacing: 2 }}>TERMINAL</span>
         </div>
         <div style={{ display: "flex", gap: 16, alignItems: "center", fontSize: 11, color: t.textMuted }}>
-          <span>SESSION: <span style={{ color: t.up }}>LIVE</span></span>
+          {/* LIVE / DEMO badge */}
+          <span style={{ display: "flex", alignItems: "center", gap: 5 }}>
+            <span style={{
+              width: 7, height: 7, borderRadius: "50%",
+              background: isLive ? "#00d4aa" : t.textMuted,
+              boxShadow: isLive ? "0 0 6px #00d4aa" : "none",
+              display: "inline-block",
+              animation: isLive ? "pulse 2s infinite" : "none",
+            }} />
+            <span style={{ color: isLive ? "#00d4aa" : t.textMuted, letterSpacing: 1 }}>
+              {isLive ? "LIVE" : "DEMO"}
+            </span>
+          </span>
           <span>{formatTime(time)}</span>
           <span style={{ color: t.accentBlue }}>FX · FUTURES · METALS · CRYPTO</span>
           <button onClick={() => setThemeKey(k => k === "dark" ? "light" : "dark")} style={{
@@ -125,31 +170,46 @@ export default function BloombergDashboard({ availableProviders }: Props) {
           <div style={{ flex: 1, overflowY: "auto" }}>
             {watchlistTab === "fx" ? (
               <WatchlistSection
-                data={Object.fromEntries(Object.keys(FX_DATA).map(k => [k, quotes[k] ?? FX_DATA[k]]))}
+                data={fxWatchlistData}
                 activeSymbol={activeSymbol} onSelect={handleSymbolClick} t={t}
               />
             ) : (
               <WatchlistSection
-                data={Object.fromEntries(Object.keys(FUTURES_DATA).map(k => [k, quotes[k] ?? FUTURES_DATA[k]]))}
+                data={futuresWatchlistData}
                 activeSymbol={activeSymbol} onSelect={handleSymbolClick} t={t}
               />
             )}
           </div>
 
-          {/* Session Status */}
+          {/* Session Status — real-time from UTC clock */}
           <div style={{ padding: 12, borderTop: `1px solid ${t.border}`, flexShrink: 0 }}>
             <div style={{ fontSize: 10, letterSpacing: 2, color: t.textMuted, marginBottom: 8 }}>SESSION STATUS</div>
-            {[
-              { name: "CME FUTURES",  open: true  },
-              { name: "LONDON FX",    open: true  },
-              { name: "NEW YORK FX",  open: true  },
-              { name: "TOKYO",        open: false },
-            ].map(s => (
-              <div key={s.name} style={{ display: "flex", justifyContent: "space-between", fontSize: 10, marginBottom: 3 }}>
-                <span style={{ color: t.textSub }}>{s.name}</span>
-                <span style={{ color: s.open ? t.up : t.textMuted }}>● {s.open ? "OPEN" : "CLOSED"}</span>
-              </div>
-            ))}
+            {SESSIONS.map(s => {
+              const open = isSessionOpen(s.start, s.end, utcHour);
+              return (
+                <div key={s.name} style={{ display: "flex", justifyContent: "space-between", fontSize: 10, marginBottom: 3 }}>
+                  <span style={{ color: t.textSub }}>{s.name}</span>
+                  <span style={{ color: open ? t.up : t.textMuted }}>● {open ? "OPEN" : "CLOSED"}</span>
+                </div>
+              );
+            })}
+            {/* Active session from intel */}
+            <div style={{ marginTop: 6, paddingTop: 6, borderTop: `1px solid ${t.borderSub ?? t.border}`, fontSize: 10 }}>
+              <span style={{ color: t.textMuted }}>ACTIVE: </span>
+              <span style={{
+                color: sessionIntel.session === "LONDON" ? "#a78bfa" :
+                       sessionIntel.session === "NY"     ? "#fb923c" :
+                       sessionIntel.session === "ASIAN"  ? "#60a5fa" : t.textMuted,
+                fontWeight: 700,
+              }}>
+                {sessionIntel.session}
+              </span>
+              {sessionIntel.session !== "CLOSED" && (
+                <span style={{ color: t.textMuted, marginLeft: 4 }}>
+                  {Math.floor(sessionIntel.timeInSession / 60)}h{sessionIntel.timeInSession % 60}m
+                </span>
+              )}
+            </div>
           </div>
         </div>
 
@@ -184,7 +244,7 @@ export default function BloombergDashboard({ availableProviders }: Props) {
               </div>
             </div>
 
-            <CandleChart bars={bars} t={t} />
+            <LightweightChart bars={bars} t={t} />
 
             <div style={{ display: "flex", gap: 16, padding: "4px 0 8px", fontSize: 10, color: t.textMuted }}>
               <span>O <span style={{ color: t.text }}>{sym.O}</span></span>
@@ -197,15 +257,15 @@ export default function BloombergDashboard({ availableProviders }: Props) {
           </div>
 
           {/* FUTURES STRIP */}
-          <FuturesStrip t={t} onSelect={handleSymbolClick} activeSymbol={activeSymbol} />
+          <FuturesStrip t={t} onSelect={handleSymbolClick} activeSymbol={activeSymbol} quotes={quotes} />
 
-          {/* NEWS */}
+          {/* PANEL CONTENT */}
           {activePanel === "news" ? (
             <div style={{ flex: 1, overflow: "auto" }}>
-              <div style={{ padding: "8px 16px", fontSize: 10, letterSpacing: 2, color: t.textMuted, borderBottom: `1px solid ${t.border}` }}>MARKET NEWS FEED — LIVE</div>
-              {MOCK_NEWS.map((n, i) => (
+              <div style={{ padding: "8px 16px", fontSize: 10, letterSpacing: 2, color: t.textMuted, borderBottom: `1px solid ${t.border}` }}>MARKET NEWS FEED — {isLive ? "LIVE" : "DEMO"}</div>
+              {news.map((n, i) => (
                 <div key={i}
-                  style={{ display: "flex", gap: 12, padding: "10px 16px", borderBottom: `1px solid ${t.borderSub}`, cursor: "pointer", transition: "background 0.12s" }}
+                  style={{ display: "flex", gap: 12, padding: "10px 16px", borderBottom: `1px solid ${t.borderSub ?? t.border}`, cursor: "pointer", transition: "background 0.12s" }}
                   onMouseEnter={e => (e.currentTarget as HTMLDivElement).style.background = t.bgHover}
                   onMouseLeave={e => (e.currentTarget as HTMLDivElement).style.background = "transparent"}>
                   <span style={{ color: t.textMuted, fontSize: 11, minWidth: 36 }}>{n.time}</span>
@@ -215,6 +275,14 @@ export default function BloombergDashboard({ availableProviders }: Props) {
                 </div>
               ))}
             </div>
+          ) : activePanel === "intel" ? (
+            <IntelPanel
+              t={t}
+              intel={sessionIntel}
+              bars={bars}
+              symbol={activeSymbol}
+              quote={sym}
+            />
           ) : (
             <AITerminal
               t={t}
@@ -234,8 +302,8 @@ export default function BloombergDashboard({ availableProviders }: Props) {
         ::-webkit-scrollbar-track { background:${t.scrollTrack}; }
         ::-webkit-scrollbar-thumb { background:${t.scrollThumb}; border-radius:2px; }
         @keyframes pulse {
-          0%,100% { opacity:0.3; transform:scale(0.8); }
-          50%      { opacity:1;   transform:scale(1.2); }
+          0%,100% { opacity:0.6; transform:scale(0.9); }
+          50%      { opacity:1;   transform:scale(1.1); }
         }
         input::placeholder { color:${t.textMuted}; opacity:1; }
       `}</style>
