@@ -16,6 +16,15 @@ const INSTRUMENTS = [
 ];
 
 export async function POST(request: NextRequest) {
+  // Guard: require X-Scan-Key header matching SCAN_SECRET env var when set
+  const secret = process.env.SCAN_SECRET;
+  if (secret) {
+    const provided = request.headers.get("x-scan-key");
+    if (provided !== secret) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+  }
+
   try {
     const barsBaseUrl = new URL("/api/bars", request.url);
     const currentHour = new Date().getUTCHours();

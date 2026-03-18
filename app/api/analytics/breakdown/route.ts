@@ -5,7 +5,8 @@ import type { NextRequest } from "next/server";
 export async function GET(request: NextRequest) {
   try {
     const dimension = request.nextUrl.searchParams.get("dimension") ?? "setup_type";
-    const days = parseInt(request.nextUrl.searchParams.get("days") ?? "30", 10);
+    const rawDays = parseInt(request.nextUrl.searchParams.get("days") ?? "30", 10);
+    const days = Number.isNaN(rawDays) || rawDays < 1 ? 30 : rawDays;
     const since = new Date();
     since.setDate(since.getDate() - days);
     const sinceISO = since.toISOString();

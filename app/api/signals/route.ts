@@ -8,7 +8,9 @@ export async function GET(request: NextRequest) {
     const status = request.nextUrl.searchParams.get("status");
     const minScore = request.nextUrl.searchParams.get("min_score");
     const rawDays = parseInt(request.nextUrl.searchParams.get("days") ?? "30", 10);
-    const days = Number.isNaN(rawDays) ? 30 : rawDays;
+    const days = Number.isNaN(rawDays) || rawDays < 1 ? 30 : rawDays;
+    const rawLimit = parseInt(request.nextUrl.searchParams.get("limit") ?? "200", 10);
+    const limit = Number.isNaN(rawLimit) || rawLimit < 1 ? 200 : Math.min(rawLimit, 500);
 
     const since = new Date();
     since.setDate(since.getDate() - days);
@@ -21,11 +23,12 @@ export async function GET(request: NextRequest) {
     if (instrument) { conditions.push(`instrument = $${p++}`); params.push(instrument); }
     if (status)     { conditions.push(`status = $${p++}`);     params.push(status); }
     if (minScore)   { conditions.push(`confluence_score >= $${p++}`); params.push(parseFloat(minScore)); }
+    params.push(limit);
 
     const client = await db.connect();
     try {
       const { rows } = await client.query(
-        `SELECT * FROM signals WHERE ${conditions.join(" AND ")} ORDER BY created_at DESC`,
+        `SELECT * FROM signals WHERE ${conditions.join(" AND ")} ORDER BY created_at DESC LIMIT $${p}`,
         params
       );
       return NextResponse.json(rows);
