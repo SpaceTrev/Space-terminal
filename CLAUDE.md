@@ -1,6 +1,6 @@
 # Space Terminal
 
-Bloomberg-style trading terminal. Next.js 15. No backend, no database.
+Bloomberg-style trading terminal. Next.js 16 + Vercel Postgres.
 
 ## Stack
 

@@ -189,7 +189,8 @@ function setChartData(
   try {
     candleSeries.setData(candles);
     if (volumes.length > 0) volSeries.setData(volumes);
-  } catch {
-    // ignore duplicate timestamp errors on rapid updates
+  } catch (err) {
+    // Only swallow duplicate-timestamp errors thrown by lightweight-charts on rapid updates
+    if (!(err instanceof Error && err.message.includes("Timestamp"))) throw err;
   }
 }

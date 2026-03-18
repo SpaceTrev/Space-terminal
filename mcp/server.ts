@@ -376,7 +376,10 @@ async function handleTool(name: string, args: Record<string, unknown>) {
           }],
         };
       }
-      const res = await fetch(`${baseUrl}/api/signals/scan`, { method: "POST" });
+      const res = await fetch(`${baseUrl}/api/signals/scan`, {
+        method: "POST",
+        signal: AbortSignal.timeout(10000),
+      });
       const json = await res.json();
       return { content: [{ type: "text", text: JSON.stringify(json, null, 2) }] };
     }
