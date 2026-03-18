@@ -52,7 +52,7 @@ async function fetchFXQuotes(key: string, allMock: Record<string, Quote>): Promi
       .join(",");
 
     const url = `https://api.polygon.io/v2/snapshot/locale/global/markets/forex/tickers?tickers=${fxSymbols}&apiKey=${key}`;
-    const res = await fetch(url, { next: { revalidate: 5 } });
+    const res = await fetch(url, { next: { revalidate: 5 }, signal: AbortSignal.timeout(4000) });
     if (!res.ok) return result;
 
     const json = await res.json();
@@ -81,7 +81,7 @@ async function fetchETFProxyQuotes(key: string, allMock: Record<string, Quote>):
   try {
     const etfTickers = Object.values(FUTURES_ETF_PROXY).map(p => p.etf).join(",");
     const url = `https://api.polygon.io/v2/snapshot/locale/us/markets/stocks/tickers?tickers=${etfTickers}&apiKey=${key}`;
-    const res = await fetch(url, { next: { revalidate: 5 } });
+    const res = await fetch(url, { next: { revalidate: 5 }, signal: AbortSignal.timeout(4000) });
     if (!res.ok) return result;
 
     const json = await res.json();
@@ -127,17 +127,17 @@ function buildQuote(displayName: string, ticker: PolygonTicker, mock?: Quote): Q
 
   return {
     symbol: displayName,
-    bid:  lastQuote.P ? String(lastQuote.P) : (mock?.bid ?? "0"),
-    ask:  lastQuote.S ? String(lastQuote.S) : (mock?.ask ?? "0"),
+    bid:  lastQuote.P != null ? String(lastQuote.P) : (mock?.bid ?? "0"),
+    ask:  lastQuote.S != null ? String(lastQuote.S) : (mock?.ask ?? "0"),
     last: String(last),
     change: change >= 0 ? `+${change.toFixed(4)}` : change.toFixed(4),
     changePct: changePct >= 0 ? `+${changePct.toFixed(2)}%` : `${changePct.toFixed(2)}%`,
     up: change >= 0,
-    volume: day.v ? formatVolume(day.v) : mock?.volume,
-    O: day.o ? String(day.o) : mock?.O,
-    H: day.h ? String(day.h) : mock?.H,
-    L: day.l ? String(day.l) : mock?.L,
-    C: day.c ? String(day.c) : mock?.C,
+    volume: day.v != null ? formatVolume(day.v) : mock?.volume,
+    O: day.o != null ? String(day.o) : mock?.O,
+    H: day.h != null ? String(day.h) : mock?.H,
+    L: day.l != null ? String(day.l) : mock?.L,
+    C: day.c != null ? String(day.c) : mock?.C,
     spread: mock?.spread,
     sparkline: mock?.sparkline,
     expiry: mock?.expiry,
@@ -158,10 +158,10 @@ function buildProxyQuote(displayName: string, ticker: PolygonTicker, scale: numb
   const changePct = prevClose ? (change / prevClose) * 100 : 0;
 
   const dp = scale >= 100 ? 0 : scale >= 10 ? 2 : 4;
-  const fmt = (n: number) => n.toLocaleString("en-US", { minimumFractionDigits: dp, maximumFractionDigits: dp });
+  const fmt = (n: number) => n.toFixed(dp);
 
-  const bid = lastQuote.P ? fmt(lastQuote.P * scale) : mock?.bid ?? "0";
-  const ask = lastQuote.S ? fmt(lastQuote.S * scale) : mock?.ask ?? "0";
+  const bid = lastQuote.P != null ? fmt(lastQuote.P * scale) : mock?.bid ?? "0";
+  const ask = lastQuote.S != null ? fmt(lastQuote.S * scale) : mock?.ask ?? "0";
 
   return {
     symbol: displayName,
@@ -171,11 +171,11 @@ function buildProxyQuote(displayName: string, ticker: PolygonTicker, scale: numb
     change: change >= 0 ? `+${fmt(change)}` : fmt(change),
     changePct: changePct >= 0 ? `+${changePct.toFixed(2)}%` : `${changePct.toFixed(2)}%`,
     up: change >= 0,
-    volume: day.v ? formatVolume(day.v) : mock?.volume,
-    O: day.o ? fmt(day.o * scale) : mock?.O,
-    H: day.h ? fmt(day.h * scale) : mock?.H,
-    L: day.l ? fmt(day.l * scale) : mock?.L,
-    C: day.c ? fmt(day.c * scale) : mock?.C,
+    volume: day.v != null ? formatVolume(day.v) : mock?.volume,
+    O: day.o != null ? fmt(day.o * scale) : mock?.O,
+    H: day.h != null ? fmt(day.h * scale) : mock?.H,
+    L: day.l != null ? fmt(day.l * scale) : mock?.L,
+    C: day.c != null ? fmt(day.c * scale) : mock?.C,
     spread: mock?.spread,
     sparkline: mock?.sparkline,
     expiry: mock?.expiry,

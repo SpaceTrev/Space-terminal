@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import type { Bar } from "@/lib/types";
 import type { Theme } from "@/lib/themes";
 
@@ -14,14 +14,18 @@ export function LightweightChart({ bars, t }: Props) {
   const chartRef = useRef<import("lightweight-charts").IChartApi | null>(null);
   const candleSeriesRef = useRef<import("lightweight-charts").ISeriesApi<"Candlestick"> | null>(null);
   const volSeriesRef = useRef<import("lightweight-charts").ISeriesApi<"Histogram"> | null>(null);
+  const [initialFitDone, setInitialFitDone] = useState(false);
 
   // Initialize chart
   useEffect(() => {
     if (!containerRef.current) return;
+    let disposed = false;
     let chart: import("lightweight-charts").IChartApi;
 
     (async () => {
       const { createChart, CandlestickSeries, HistogramSeries } = await import("lightweight-charts");
+
+      if (disposed) return;
 
       chart = createChart(containerRef.current!, {
         layout: {
@@ -95,6 +99,7 @@ export function LightweightChart({ bars, t }: Props) {
     })();
 
     return () => {
+      disposed = true;
       chart?.remove();
       chartRef.current = null;
       candleSeriesRef.current = null;
@@ -131,12 +136,16 @@ export function LightweightChart({ bars, t }: Props) {
   useEffect(() => {
     if (!candleSeriesRef.current || !volSeriesRef.current || bars.length === 0) return;
     setChartData(bars, candleSeriesRef.current, volSeriesRef.current);
-    chartRef.current?.timeScale().fitContent();
-  }, [bars]);
+    if (!initialFitDone) {
+      chartRef.current?.timeScale().fitContent();
+      setInitialFitDone(true);
+    }
+  }, [bars, initialFitDone]);
 
   // Resize observer
   useEffect(() => {
     if (!containerRef.current || !chartRef.current) return;
+    const el = containerRef.current;
     const ro = new ResizeObserver(entries => {
       for (const entry of entries) {
         chartRef.current?.applyOptions({
@@ -145,9 +154,9 @@ export function LightweightChart({ bars, t }: Props) {
         });
       }
     });
-    ro.observe(containerRef.current);
+    ro.observe(el);
     return () => ro.disconnect();
-  });
+  }, []);
 
   return (
     <div

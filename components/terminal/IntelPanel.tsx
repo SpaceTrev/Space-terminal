@@ -1,5 +1,6 @@
 "use client";
 
+import { useMemo } from "react";
 import type { Theme } from "@/lib/themes";
 import type { SessionIntel } from "@/hooks/useSessionIntel";
 import type { Bar, Quote } from "@/lib/types";
@@ -44,43 +45,41 @@ export function IntelPanel({ t, intel, bars, symbol, quote }: Props) {
     atr, atrRatio, sessionHigh, sessionLow, prevHigh, prevLow, dailyRangePct,
   } = intel;
 
-  // Session color
-  const sessColor = session === "LONDON" ? "#a78bfa" :
-                    session === "NY"     ? "#fb923c" :
-                    session === "ASIAN"  ? "#60a5fa" : t.textMuted;
+  const derived = useMemo(() => {
+    const sessColor = session === "LONDON" ? "#a78bfa" :
+                      session === "NY"     ? "#fb923c" :
+                      session === "ASIAN"  ? "#60a5fa" : t.textMuted;
 
-  // Participation color
-  const partColor = participation === "CLIMAX" ? t.down :
-                    participation === "HIGH"   ? "#fb923c" :
-                    participation === "LOW"    ? t.accentBlue : t.up;
+    const partColor = participation === "CLIMAX" ? t.down :
+                      participation === "HIGH"   ? "#fb923c" :
+                      participation === "LOW"    ? t.accentBlue : t.up;
 
-  // Structure color
-  const structColor = structure === "HH/HL" ? t.up :
-                      structure === "LH/LL" ? t.down : t.textMuted;
+    const structColor = structure === "HH/HL" ? t.up :
+                        structure === "LH/LL" ? t.down : t.textMuted;
 
-  // Profile color
-  const profileColor = profile === "TREND"    ? t.up :
-                       profile === "BREAKOUT" ? t.down : t.accentBlue;
+    const profileColor = profile === "TREND"    ? t.up :
+                         profile === "BREAKOUT" ? t.down : t.accentBlue;
 
-  // Format time-in-session
-  const hh = Math.floor(timeInSession / 60);
-  const mm = timeInSession % 60;
-  const timeStr = session !== "CLOSED"
-    ? (hh > 0 ? `${hh}h ${mm}m` : `${mm}m`)
-    : "—";
+    const hh = Math.floor(timeInSession / 60);
+    const mm = timeInSession % 60;
+    const timeStr = session !== "CLOSED"
+      ? (hh > 0 ? `${hh}h ${mm}m` : `${mm}m`)
+      : "—";
 
-  // RVOL bar
-  const rvolPct = Math.min(atrRatio * 50, 100); // 2.0x = full bar
-  const rvolColor = atrRatio >= 2.0 ? t.down :
-                    atrRatio >= 1.3 ? "#fb923c" :
-                    atrRatio <= 0.7 ? t.accentBlue : t.up;
+    const rvolPct = Math.min(atrRatio * 50, 100);
+    const rvolColor = atrRatio >= 2.0 ? t.down :
+                      atrRatio >= 1.3 ? "#fb923c" :
+                      atrRatio <= 0.7 ? t.accentBlue : t.up;
 
-  // Current price for reference
-  const currentPrice = parseFloat(quote.ask ?? quote.last ?? "0");
+    const currentPrice = parseFloat(quote.ask ?? quote.last ?? "0");
 
-  // Distance from session high/low
-  const distHigh = sessionHigh && currentPrice ? sessionHigh - currentPrice : null;
-  const distLow  = sessionLow  && currentPrice ? currentPrice - sessionLow  : null;
+    const distHigh = sessionHigh && currentPrice ? sessionHigh - currentPrice : null;
+    const distLow  = sessionLow  && currentPrice ? currentPrice - sessionLow  : null;
+
+    return { sessColor, partColor, structColor, profileColor, timeStr, rvolPct, rvolColor, currentPrice, distHigh, distLow };
+  }, [session, timeInSession, profile, participation, structure, atrRatio, sessionHigh, sessionLow, quote.ask, quote.last, t]);
+
+  const { sessColor, partColor, structColor, profileColor, timeStr, rvolPct, rvolColor, distHigh, distLow } = derived;
 
   return (
     <div style={{ flex: 1, overflow: "auto", padding: "12px 16px" }}>

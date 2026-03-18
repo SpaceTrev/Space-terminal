@@ -28,7 +28,7 @@ export function useQuotes(): { quotes: Record<string, Quote>; isLive: boolean } 
         const mock = ALL_MOCK[sym];
         return mock && q.ask !== mock.ask;
       });
-      if (hasDiff) setIsLive(true);
+      setIsLive(hasDiff);
 
       setQuotes(prev => {
         const next = { ...prev };

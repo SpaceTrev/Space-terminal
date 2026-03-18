@@ -1,3 +1,5 @@
+"use client";
+
 import type { Theme } from "@/lib/themes";
 import type { Quote } from "@/lib/types";
 

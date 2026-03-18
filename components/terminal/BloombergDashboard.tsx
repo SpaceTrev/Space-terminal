@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { THEMES } from "@/lib/themes";
 import type { ThemeKey } from "@/lib/themes";
 import { FX_DATA, FUTURES_DATA } from "@/lib/mockData";
@@ -24,17 +24,18 @@ const PANELS = [
 const TIMEFRAMES = ["1M", "5M", "15M", "1H", "4H", "D"];
 
 // Session windows in UTC hours (start inclusive, end exclusive)
+// CME: open 22:00 Sun → 21:00 Fri, closed 21:00–22:00 daily
 const SESSIONS = [
-  { name: "CME FUTURES",  start: 22, end: 47 }, // 22:00–23:00 + 00:00–21:00 (near 24h)
+  { name: "CME FUTURES",  start: 22, end: 21 },
   { name: "LONDON FX",    start:  7, end: 16 },
   { name: "NEW YORK FX",  start: 13, end: 22 },
   { name: "TOKYO",        start:  0, end:  9 },
 ] as const;
 
 function isSessionOpen(start: number, end: number, utcHour: number): boolean {
-  // CME is almost always open — handle wrap-around
-  if (end > 24) {
-    return utcHour >= start || utcHour < (end - 24);
+  if (start > end) {
+    // Wrap-around (e.g. CME 22–21 means open except 21–22)
+    return utcHour >= start || utcHour < end;
   }
   return utcHour >= start && utcHour < end;
 }
@@ -59,6 +60,15 @@ export default function BloombergDashboard({ availableProviders }: Props) {
 
   const sym      = quotes[activeSymbol] ?? FX_DATA["EUR/USD"];
   const isFutures = sym?.type === "futures";
+
+  const fxWatchlistData = useMemo(
+    () => Object.fromEntries(Object.keys(FX_DATA).map(k => [k, quotes[k] ?? FX_DATA[k]])),
+    [quotes]
+  );
+  const futuresWatchlistData = useMemo(
+    () => Object.fromEntries(Object.keys(FUTURES_DATA).map(k => [k, quotes[k] ?? FUTURES_DATA[k]])),
+    [quotes]
+  );
 
   useEffect(() => {
     const id = setInterval(() => setTime(new Date()), 1000);
@@ -160,12 +170,12 @@ export default function BloombergDashboard({ availableProviders }: Props) {
           <div style={{ flex: 1, overflowY: "auto" }}>
             {watchlistTab === "fx" ? (
               <WatchlistSection
-                data={Object.fromEntries(Object.keys(FX_DATA).map(k => [k, quotes[k] ?? FX_DATA[k]]))}
+                data={fxWatchlistData}
                 activeSymbol={activeSymbol} onSelect={handleSymbolClick} t={t}
               />
             ) : (
               <WatchlistSection
-                data={Object.fromEntries(Object.keys(FUTURES_DATA).map(k => [k, quotes[k] ?? FUTURES_DATA[k]]))}
+                data={futuresWatchlistData}
                 activeSymbol={activeSymbol} onSelect={handleSymbolClick} t={t}
               />
             )}

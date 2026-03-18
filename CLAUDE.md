@@ -8,7 +8,7 @@ Next.js 15 | TypeScript | Polygon.io | lightweight-charts v5 | Gemini / Perplexi
 
 ## Data flow
 
-```
+```text
 Polygon REST → /api/quotes → useQuotes hook → Watchlist + Ticker (polls every 5s)
                FX/Crypto: forex snapshot endpoint
                Futures: ETF proxy (SPY×10, QQQ×42, GLD×10.5, etc.)
@@ -31,7 +31,7 @@ Selected provider persists to `localStorage`. Keys never leave the server.
 
 ## Key files
 
-```
+```text
 components/terminal/
   BloombergDashboard.tsx  — root layout and state; real-time UTC session detection; LIVE/DEMO badge
   LightweightChart.tsx    — TradingView-style chart using lightweight-charts v5 (replaces SVG chart)
@@ -64,14 +64,14 @@ app/api/
   news/route.ts   — GET: Polygon news → NewsItem[]
 ```
 
-## Symbols covered (18 total)
+## Symbols covered (17 total)
 
-**FX / Crypto** (10): EUR/USD, GBP/USD, USD/JPY, XAU/USD, BTC/USD, ETH/USD, SOL/USD, GBP/JPY, USD/CAD
+**FX / Crypto** (9): EUR/USD, GBP/USD, USD/JPY, XAU/USD, BTC/USD, ETH/USD, SOL/USD, GBP/JPY, USD/CAD
 **Futures** (8): ES1! (S&P 500), NQ1! (Nasdaq), YM1! (Dow), CL1! (Crude Oil), GC1! (Gold), ZN1! (10Y T-Note), 6E1! (EUR Fut), 6J1! (JPY Fut)
 
 ## ETF Proxy map for futures quotes
 
-```
+```text
 ES (S&P 500)  → SPY  × 10.0
 NQ (Nasdaq)   → QQQ  × 42.0
 YM (Dow)      → DIA  × 100.0
