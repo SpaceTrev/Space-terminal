@@ -247,7 +247,7 @@ export default function BloombergDashboard({ availableProviders }: Props) {
           </div>
 
           {/* FUTURES STRIP */}
-          <FuturesStrip t={t} onSelect={handleSymbolClick} activeSymbol={activeSymbol} />
+          <FuturesStrip t={t} onSelect={handleSymbolClick} activeSymbol={activeSymbol} quotes={quotes} />
 
           {/* PANEL CONTENT */}
           {activePanel === "news" ? (
