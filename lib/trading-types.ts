@@ -41,7 +41,7 @@ export interface Signal {
   timeframe: string;
   session: string | null;
   confluence_score: number;
-  score_grade: string | null;
+  score_grade: ScoreGrade | null;
   entry_ref: number | null;
   stop_loss: number | null;
   tp1: number | null;
@@ -75,7 +75,7 @@ export interface GhostTrade {
   setup_type: string;
   session: string | null;
   score: number;
-  score_grade: string | null;
+  score_grade: ScoreGrade | null;
   entry_ref: number;
   stop_loss: number;
   tp1: number | null;

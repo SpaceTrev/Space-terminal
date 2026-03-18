@@ -1,4 +1,4 @@
-import { sql } from "@/lib/db";
+import { sql, db } from "@/lib/db";
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 
@@ -6,34 +6,31 @@ export async function GET(request: NextRequest) {
   try {
     const role = request.nextUrl.searchParams.get("role");
     const status = request.nextUrl.searchParams.get("status");
+    const rawLimit = parseInt(request.nextUrl.searchParams.get("limit") ?? "50", 10);
+    const rawOffset = parseInt(request.nextUrl.searchParams.get("offset") ?? "0", 10);
+    const limit = Number.isNaN(rawLimit) || rawLimit < 1 ? 50 : Math.min(rawLimit, 200);
+    const offset = Number.isNaN(rawOffset) || rawOffset < 0 ? 0 : rawOffset;
 
-    let rows;
-    if (role && status) {
-      ({ rows } = await sql`
-        SELECT * FROM agent_tasks
-        WHERE agent_role = ${role} AND status = ${status}
-        ORDER BY created_at DESC
-      `);
-    } else if (role) {
-      ({ rows } = await sql`
-        SELECT * FROM agent_tasks
-        WHERE agent_role = ${role}
-        ORDER BY created_at DESC
-      `);
-    } else if (status) {
-      ({ rows } = await sql`
-        SELECT * FROM agent_tasks
-        WHERE status = ${status}
-        ORDER BY created_at DESC
-      `);
-    } else {
-      ({ rows } = await sql`
-        SELECT * FROM agent_tasks
-        ORDER BY created_at DESC
-      `);
+    const conditions: string[] = [];
+    const params: (string | number)[] = [];
+    let p = 1;
+
+    if (role)   { conditions.push(`agent_role = $${p++}`); params.push(role); }
+    if (status) { conditions.push(`status = $${p++}`);     params.push(status); }
+
+    const where = conditions.length ? `WHERE ${conditions.join(" AND ")}` : "";
+    params.push(limit, offset);
+
+    const client = await db.connect();
+    try {
+      const { rows } = await client.query(
+        `SELECT * FROM agent_tasks ${where} ORDER BY created_at DESC LIMIT $${p} OFFSET $${p + 1}`,
+        params
+      );
+      return NextResponse.json(rows);
+    } finally {
+      client.release();
     }
-
-    return NextResponse.json(rows);
   } catch (error) {
     console.error("Agents GET error:", error);
     return NextResponse.json({ error: "Failed to fetch tasks" }, { status: 500 });

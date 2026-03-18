@@ -142,9 +142,9 @@ export function LightweightChart({ bars, t }: Props) {
     }
   }, [bars, initialFitDone]);
 
-  // Resize observer
+  // Resize observer — guard only on container; chart may still be initializing async
   useEffect(() => {
-    if (!containerRef.current || !chartRef.current) return;
+    if (!containerRef.current) return;
     const el = containerRef.current;
     const ro = new ResizeObserver(entries => {
       for (const entry of entries) {

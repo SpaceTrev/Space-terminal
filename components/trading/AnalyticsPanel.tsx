@@ -18,11 +18,11 @@ interface BreakdownRow {
   avg_r: number;
 }
 
-const DIMENSIONS = ["setup", "instrument", "session", "score_bucket"] as const;
+const DIMENSIONS = ["setup_type", "instrument", "session", "score_bucket"] as const;
 type Dimension = (typeof DIMENSIONS)[number];
 
 const DIMENSION_LABELS: Record<Dimension, string> = {
-  setup: "BY SETUP",
+  setup_type: "BY SETUP",
   instrument: "BY INSTRUMENT",
   session: "BY SESSION",
   score_bucket: "BY SCORE BUCKET",
@@ -31,7 +31,7 @@ const DIMENSION_LABELS: Record<Dimension, string> = {
 export function AnalyticsPanel({ t }: { t: Theme }) {
   const [summary, setSummary] = useState<SummaryData | null>(null);
   const [breakdowns, setBreakdowns] = useState<Record<Dimension, BreakdownRow[]>>(
-    { setup: [], instrument: [], session: [], score_bucket: [] }
+    { setup_type: [], instrument: [], session: [], score_bucket: [] }
   );
   const [loading, setLoading] = useState(true);
 

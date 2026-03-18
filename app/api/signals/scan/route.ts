@@ -27,7 +27,7 @@ export async function POST(request: NextRequest) {
         barsUrl.searchParams.set("symbol", instrument);
         barsUrl.searchParams.set("timeframe", "15M");
 
-        const barsRes = await fetch(barsUrl.toString());
+        const barsRes = await fetch(barsUrl.toString(), { signal: AbortSignal.timeout(4000) });
         if (!barsRes.ok) continue;
 
         const bars = await barsRes.json();

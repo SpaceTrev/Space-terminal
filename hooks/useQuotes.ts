@@ -17,16 +17,20 @@ export function useQuotes(): { quotes: Record<string, Quote>; isLive: boolean } 
     )
   );
 
+  const inFlight = useRef(false);
+
   const fetchQuotes = useCallback(async () => {
+    if (inFlight.current) return;
+    inFlight.current = true;
     try {
-      const res = await fetch("/api/quotes");
+      const res = await fetch("/api/quotes", { signal: AbortSignal.timeout(4000) });
       if (!res.ok) return;
       const data: Record<string, Quote> = await res.json();
 
-      // Detect if we got real data by checking if any value differs from mock
+      // Live if any symbol differs from mock OR if API returns a symbol not in mock
       const hasDiff = Object.entries(data).some(([sym, q]) => {
         const mock = ALL_MOCK[sym];
-        return mock && q.ask !== mock.ask;
+        return !mock || q.ask !== mock.ask;
       });
       setIsLive(hasDiff);
 
@@ -46,6 +50,8 @@ export function useQuotes(): { quotes: Record<string, Quote>; isLive: boolean } 
       });
     } catch {
       // silently fall back to current state
+    } finally {
+      inFlight.current = false;
     }
   }, []);
 
